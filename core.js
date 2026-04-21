@@ -1,4 +1,4 @@
-// PocketNet Core v4.0 — gzip portal.bin / delta.bin, WebRTC + qr-scanner UMD
+// PocketNet Core v4.0 — api/*.bin = gzip; WebRTC + qr-scanner UMD
 (function(){
     class PocketNet {
         constructor(){
@@ -30,17 +30,25 @@
             return Array.from(byId.values()).sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
         }
 
+        /** Файлы api/*.bin — gzip (1f 8b). Ответ fetch без Content-Encoding: тело = эти байты. Если хост отдаёт уже JSON — первый байт [ или {. */
         async decompress(buffer){
-            try{
-                // Меняем 'gzip' на 'deflate'
-                const stream = new DecompressionStream('deflate');
-                const writer = stream.writable.getWriter();
-                writer.write(new Uint8Array(buffer));
-                writer.close();
-                const decompressed = await new Response(stream.readable).arrayBuffer();
-                return new TextDecoder().decode(decompressed);
-            }catch(e){
-                console.warn('Decompression failed:', e);
+            const u8 = new Uint8Array(buffer);
+            if (u8.length === 0) return '[]';
+
+            const isGzip = u8[0] === 0x1f && u8[1] === 0x8b;
+            if (!isGzip) {
+                return this.fallbackDecompress(buffer);
+            }
+
+            if (typeof DecompressionStream === 'undefined') {
+                return this.fallbackDecompress(buffer);
+            }
+
+            try {
+                const ds = new DecompressionStream('gzip');
+                const out = new Blob([u8]).stream().pipeThrough(ds);
+                return await new Response(out).text();
+            } catch (e) {
                 return this.fallbackDecompress(buffer);
             }
         }
