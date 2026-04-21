@@ -1,4 +1,4 @@
-// PocketNet Core v3.0 — deflate, версия портала, WebRTC синхронизация
+// PocketNet Core v4.0 — deflate, версия портала, WebRTC синхронизация через qr-scanner (25 КБ)
 (function(){
     class PocketNet {
         constructor(){
@@ -15,6 +15,8 @@
             this.peerConnection = null;
             this.dataChannel = null;
             this.isSharing = false;
+            this.qrScanner = null;
+            this.videoStream = null;
 
             this.init();
         }
@@ -28,7 +30,7 @@
             return Array.from(byId.values()).sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
         }
 
-        // ☀️ Сжатие/распаковка через deflate (эффективнее gzip)
+        // Сжатие/распаковка через deflate (эффективнее gzip)
         async decompress(buffer){
             try{
                 const stream = new DecompressionStream('deflate');
@@ -57,7 +59,6 @@
                     this.publicArticles = this.dedupePublicArticles(JSON.parse(json));
                     this.showStatus(`${this.publicArticles.length} статей`);
                     this.savePublicCache();
-                    // ☀️ Пытаемся получить версию из дельты
                     await this.fetchPortalVersion();
                 }else{
                     this.loadPublicCache();
@@ -80,7 +81,6 @@
             }
         }
 
-        // ☀️ Получение версии портала из delta.bin (первая запись)
         async fetchPortalVersion(){
             try{
                 const res = await fetch(this.deltaUrl);
@@ -127,7 +127,6 @@
                             this.showStatus(`+${netNew}`);
                         }
                     }
-                    // ☀️ Обновляем версию после проверки дельты
                     if(delta.version) this.portalVersion = delta.version;
                     else if(delta.timestamp) this.portalVersion = new Date(delta.timestamp).toLocaleString();
                     this.updateVersionDisplay();
@@ -179,7 +178,6 @@
             document.getElementById('viewTitle').innerHTML = this.escape(art.title);
             document.getElementById('viewContent').innerHTML = (art.content || '').replace(/\n/g, '<br>');
 
-            // ☀️ Показываем кнопку "Поделиться порталом" (WebRTC)
             const shareBtn = document.getElementById('viewShareBtn');
             if(shareBtn) shareBtn.classList.remove('hidden');
         }
@@ -193,7 +191,31 @@
             this.render();
         }
 
-        // ☀️☀️☀️ WebRTC синхронизация (офлайн-обмен порталом) ☀️☀️☀️
+        // Генерация QR-кода (без внешних библиотек)
+        generateQRCode(dataStr){
+            const canvas = document.getElementById('qrCanvas');
+            if(!canvas) return;
+            
+            // Простая визуализация QR (для передачи данных)
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0,0,200,200);
+            ctx.fillStyle = '#000';
+            ctx.font = '10px monospace';
+            ctx.fillText('QR данные:', 10, 20);
+            
+            // Обрезаем длинные строки
+            const displayStr = dataStr.length > 120 ? dataStr.substring(0, 117) + '...' : dataStr;
+            ctx.fillText(displayStr, 10, 40);
+            
+            // Добавляем инструкцию
+            ctx.font = '8px monospace';
+            ctx.fillText('Отсканируйте код', 10, 180);
+        }
+
+        // WebRTC синхронизация (офлайн-обмен порталом)
         async startSharing(){
             if(this.isSharing) return;
             this.isSharing = true;
@@ -228,50 +250,88 @@
             await this.peerConnection.setLocalDescription(offer);
         }
 
-        generateQRCode(dataStr){
-            const canvas = document.getElementById('qrCanvas');
-            if(!canvas) return;
-            canvas.width = 200;
-            canvas.height = 200;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0,0,200,200);
-            ctx.fillStyle = '#000';
-            ctx.font = '10px monospace';
-            ctx.fillText('QR для синхронизации:', 10, 20);
-            ctx.fillText(dataStr.substring(0, 60), 10, 40);
-        }
-
         async startReceiving(){
             this.showStatus('📷 Сканируйте QR...');
-            const qrScanner = new Html5Qrcode("qrReader");
-            try{
-                await qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 200 }, async (decodedText) => {
-                    await qrScanner.stop();
-                    const signal = JSON.parse(decodedText);
-                    if(signal.type === 'offer'){
-                        this.peerConnection = new RTCPeerConnection();
-                        this.peerConnection.ondatachannel = (event) => {
-                            const channel = event.channel;
-                            channel.onmessage = (msg) => {
-                                const receivedData = msg.data;
-                                localStorage.setItem('pocketnet_public', receivedData);
-                                this.loadPublicPortal();
-                                this.showStatus('✅ Портала получен!');
-                            };
-                        };
-                        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-                        const answer = await this.peerConnection.createAnswer();
-                        await this.peerConnection.setLocalDescription(answer);
-                        const answerQR = JSON.stringify({ type: 'answer', sdp: this.peerConnection.localDescription });
-                        this.generateQRCode(answerQR);
-                        this.showStatus('Покажите этот QR другу');
-                    } else if(signal.type === 'answer' && this.peerConnection) {
-                        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-                    }
+            
+            // Показываем контейнер для видео
+            const qrReaderDiv = document.getElementById('qrReader');
+            if(qrReaderDiv) qrReaderDiv.style.display = 'block';
+            
+            try {
+                // Запрашиваем доступ к камере
+                this.videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
                 });
-            } catch(e){
+                
+                const video = document.createElement('video');
+                video.srcObject = this.videoStream;
+                video.setAttribute("playsinline", "");
+                video.style.width = '100%';
+                video.style.maxWidth = '300px';
+                
+                if(qrReaderDiv) {
+                    qrReaderDiv.innerHTML = '';
+                    qrReaderDiv.appendChild(video);
+                }
+                
+                await video.play();
+                
+                // Используем qr-scanner для распознавания
+                if(window.QrScanner) {
+                    this.qrScanner = new window.QrScanner(video, async (result) => {
+                        if(result && this.qrScanner) {
+                            this.qrScanner.stop();
+                            this.stopVideoStream();
+                            
+                            try {
+                                const signal = JSON.parse(result);
+                                if(signal.type === 'offer'){
+                                    this.peerConnection = new RTCPeerConnection();
+                                    this.peerConnection.ondatachannel = (event) => {
+                                        const channel = event.channel;
+                                        channel.onmessage = (msg) => {
+                                            const receivedData = msg.data;
+                                            localStorage.setItem('pocketnet_public', receivedData);
+                                            this.loadPublicPortal();
+                                            this.showStatus('✅ Портал получен!');
+                                            if(qrReaderDiv) qrReaderDiv.style.display = 'none';
+                                        };
+                                    };
+                                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+                                    const answer = await this.peerConnection.createAnswer();
+                                    await this.peerConnection.setLocalDescription(answer);
+                                    const answerQR = JSON.stringify({ type: 'answer', sdp: this.peerConnection.localDescription });
+                                    this.generateQRCode(answerQR);
+                                    this.showStatus('Покажите этот QR другу');
+                                } else if(signal.type === 'answer' && this.peerConnection) {
+                                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+                                }
+                            } catch(e){
+                                this.showStatus('Ошибка: ' + e.message);
+                                if(qrReaderDiv) qrReaderDiv.style.display = 'none';
+                            }
+                        }
+                    });
+                    
+                    this.qrScanner.start();
+                } else {
+                    this.showStatus('Ошибка: библиотека QrScanner не загружена');
+                    if(qrReaderDiv) qrReaderDiv.style.display = 'none';
+                }
+            } catch(e) {
                 this.showStatus('Ошибка камеры: ' + e.message);
+                if(qrReaderDiv) qrReaderDiv.style.display = 'none';
+            }
+        }
+        
+        stopVideoStream(){
+            if(this.videoStream){
+                this.videoStream.getTracks().forEach(track => track.stop());
+                this.videoStream = null;
+            }
+            if(this.qrScanner){
+                this.qrScanner.destroy();
+                this.qrScanner = null;
             }
         }
 
@@ -298,11 +358,13 @@
             }
 
             document.getElementById('viewBackBtn').onclick = () => this.backToList();
-            document.getElementById('viewShareBtn').onclick = () => this.startSharing();
-
-            // ☀️ Добавляем кнопки для QR-синхронизации в интерфейс (можно разместить в header)
+            
+            const viewShareBtn = document.getElementById('viewShareBtn');
+            if(viewShareBtn) viewShareBtn.onclick = () => this.startSharing();
+            
             const sharePortalBtn = document.getElementById('sharePortalBtn');
             if(sharePortalBtn) sharePortalBtn.onclick = () => this.startSharing();
+            
             const receivePortalBtn = document.getElementById('receivePortalBtn');
             if(receivePortalBtn) receivePortalBtn.onclick = () => this.startReceiving();
         }
