@@ -1,8 +1,9 @@
 {
   "name": "PocketNet",
   "short_name": "PocketNet",
-  "id": "/pocketnet/",
-  "start_url": "/",
+  "id": "https://kireevroman.github.io/pocketnet/",
+  "start_url": "/pocketnet/",
+  "scope": "/pocketnet/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#1a73e8",
