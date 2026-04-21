@@ -1,9 +1,11 @@
-const CACHE_NAME = 'pocketnet-v7';
+const CACHE_NAME = 'pocketnet-v8';
 const base = () => new URL('./', self.location).href;
 const u = (p) => new URL(p, base()).href;
 const urlsToCache = [
     u('index.html'),
     u('core.js'),
+    u('ui.js'),
+    u('bluetooth.js'),
     u('manifest.json'),
     u('lib/qrcode.min.js')
 ];

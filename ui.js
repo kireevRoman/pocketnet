@@ -11,7 +11,7 @@ const UI = {
             articleView: document.getElementById('articleView'),
             viewTitle: document.getElementById('viewTitle'),
             viewContent: document.getElementById('viewContent'),
-            backBtn: document.getElementById('backBtn'),
+            backBtn: document.getElementById('viewBackBtn') || document.getElementById('backBtn'),
             syncBtn: document.getElementById('syncBtn'),
             shareBtn: document.getElementById('shareBtn'),
             syncDialog: document.getElementById('syncDialog'),
@@ -109,16 +109,17 @@ const UI = {
     
     showArticle(article) {
         if (!article) return;
-        
-        this.elements.publicList.style.display = 'none';
-        this.elements.articleView.style.display = 'block';
-        this.elements.viewTitle.innerHTML = this.escape(article.title);
-        this.elements.viewContent.innerHTML = (article.content || '').replace(/\n/g, '<br>');
+        if (this.elements.publicList) this.elements.publicList.style.display = 'none';
+        if (this.elements.articleView) this.elements.articleView.style.display = 'block';
+        if (this.elements.viewTitle) this.elements.viewTitle.innerHTML = this.escape(article.title);
+        if (this.elements.viewContent) {
+            this.elements.viewContent.innerHTML = (article.content || '').replace(/\n/g, '<br>');
+        }
     },
     
     hideArticle() {
-        this.elements.publicList.style.display = 'block';
-        this.elements.articleView.style.display = 'none';
+        if (this.elements.publicList) this.elements.publicList.style.display = 'block';
+        if (this.elements.articleView) this.elements.articleView.style.display = 'none';
     },
     
     escape(str) {

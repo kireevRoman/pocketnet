@@ -216,8 +216,10 @@
                 });
             }
             
-            const back = document.getElementById('backBtn');
-            if (back) back.onclick = () => this.backToList();
+            const back = document.querySelector('#viewBackBtn, #backBtn, button[data-action="back"]');
+            if (back) {
+                back.addEventListener('click', () => this.backToList());
+            }
             
             const syncBtn = document.getElementById('syncBtn');
             if (syncBtn) syncBtn.onclick = () => UI.showDialog();
