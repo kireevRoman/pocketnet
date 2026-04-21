@@ -2,14 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PocketNet</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#06c">
-<script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,sans-serif;background:#eee;color:#222;padding:max(8px,env(safe-area-inset-top)) 8px 8px}
@@ -25,39 +24,23 @@ h1{font-size:1.2rem}
 .view{padding:.75rem;border-bottom:1px solid #ccc;display:none}
 #viewTitle{font-size:1.1rem;margin-bottom:.4rem}
 #viewContent{line-height:1.5}
-.back-btn,.share-btn{font:inherit;padding:.35rem .65rem;border:1px solid #06c;background:#fff;color:#06c;cursor:pointer;margin-right:.5rem}
+#viewContent a{color:#06c}
+.back-btn{font:inherit;padding:.35rem .65rem;border:1px solid #06c;background:#fff;color:#06c;cursor:pointer;margin-bottom:.5rem}
 .empty{padding:1.5rem 1rem;text-align:center;color:#666}
-.hidden{display:none}
-.qr-panel{background:#fff;padding:.75rem;margin-top:.5rem;text-align:center}
-canvas{border:1px solid #ccc;max-width:200px;margin-top:.5rem}
-button{margin-top:.5rem}
 </style>
 </head>
 <body>
 <div id="app">
 <div class="header">
-<h1>📘 PocketNet</h1>
+<h1>PocketNet</h1>
 <input type="text" id="searchInput" class="search-box" placeholder="Поиск">
-<div class="status">
-<span id="statusText">…</span>
-<span id="portalVersion"></span>
-<span>v2</span>
-</div>
-<div style="margin-top:0.5rem">
-<button id="sharePortalBtn" class="share-btn">📤 Поделиться порталом</button>
-<button id="receivePortalBtn" class="share-btn">📷 Получить портал</button>
-</div>
+<div class="status"><span id="statusText">…</span><span>v2</span></div>
 </div>
 <div id="publicList" class="list"></div>
 <div id="articleView" class="view">
-<button id="viewBackBtn" class="back-btn">Назад</button>
-<button id="viewShareBtn" class="share-btn hidden">📤 Поделиться</button>
+<button type="button" id="viewBackBtn" class="back-btn">Назад</button>
 <h2 id="viewTitle"></h2>
 <div id="viewContent"></div>
-</div>
-<div id="qrPanel" class="qr-panel hidden">
-<canvas id="qrCanvas"></canvas>
-<div id="qrReader" style="width:100%;max-width:300px;margin:0 auto"></div>
 </div>
 </div>
 <script src="core.js"></script>

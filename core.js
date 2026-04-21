@@ -1,22 +1,14 @@
-// PocketNet Core — gzip только если 1f 8b; иначе UTF-8 (уже распакованный ответ)
+// PocketNet Core v2.0
 (function(){
     class PocketNet {
         constructor(){
             this.publicArticles = [];
             this.searchQuery = '';
             this.currentViewArticleId = null;
-            this.portalVersion = '';
 
             const base = new URL('./', document.baseURI);
             this.apiUrl = new URL('api/portal.bin', base).href;
             this.deltaUrl = new URL('api/delta.bin', base).href;
-
-            // WebRTC
-            this.peerConnection = null;
-            this.dataChannel = null;
-            this.isSharing = false;
-            this.qrScanner = null;
-            this.videoStream = null;
 
             this.init();
         }
@@ -30,71 +22,22 @@
             return Array.from(byId.values()).sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
         }
 
-        utf8Decode(buf){
-            return new TextDecoder().decode(new Uint8Array(buf));
-        }
-
-        /** Уже готовый JSON (fetch снял Content-Encoding, или .bin без gzip). */
-        bufferLooksLikeJson(u8){
-            let i = 0;
-            if (u8.length >= 3 && u8[0] === 0xef && u8[1] === 0xbb && u8[2] === 0xbf) i = 3;
-            while (i < u8.length){
-                const c = u8[i];
-                if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d){ i++; continue; }
-                return c === 0x5b || c === 0x7b;
-            }
-            return false;
-        }
-
-        isGzipMagic(u8){
-            return u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b;
-        }
-
-        async gunzipToBuffer(u8){
-            if (typeof DecompressionStream === 'undefined') return null;
-            try {
+        async decompress(buffer){
+            try{
                 const stream = new DecompressionStream('gzip');
                 const writer = stream.writable.getWriter();
-                await writer.write(u8);
-                await writer.close();
-                const ab = await new Response(stream.readable).arrayBuffer().catch(() => null);
-                return ab ? new Uint8Array(ab) : null;
-            } catch (e) {
-                return null;
+                writer.write(new Uint8Array(buffer));
+                writer.close();
+                const decompressed = await new Response(stream.readable).arrayBuffer();
+                return new TextDecoder().decode(decompressed);
+            }catch(e){
+                return this.fallbackDecompress(buffer);
             }
-        }
-
-        async decompress(buffer){
-            let u8 = new Uint8Array(buffer);
-            if (u8.length === 0) return '[]';
-
-            if (this.bufferLooksLikeJson(u8)) {
-                return this.utf8Decode(u8);
-            }
-
-            if (!this.isGzipMagic(u8)) {
-                return this.utf8Decode(u8);
-            }
-
-            let layers = 0;
-            while (layers < 3 && this.isGzipMagic(u8)){
-                const next = await this.gunzipToBuffer(u8);
-                if (!next) {
-                    return this.fallbackDecompress(u8.buffer);
-                }
-                u8 = next;
-                layers++;
-                if (this.bufferLooksLikeJson(u8)) {
-                    return this.utf8Decode(u8);
-                }
-            }
-
-            return this.utf8Decode(u8);
         }
 
         fallbackDecompress(buffer){
             try{
-                return this.utf8Decode(buffer);
+                return new TextDecoder().decode(new Uint8Array(buffer));
             }catch(e){ return '[]'; }
         }
 
@@ -107,7 +50,6 @@
                     this.publicArticles = this.dedupePublicArticles(JSON.parse(json));
                     this.showStatus(`${this.publicArticles.length} статей`);
                     this.savePublicCache();
-                    await this.fetchPortalVersion();
                 }else{
                     this.loadPublicCache();
                 }
@@ -129,34 +71,6 @@
             }
         }
 
-        async fetchPortalVersion(){
-            try{
-                const res = await fetch(this.deltaUrl);
-                if(res.ok){
-                    const compressed = await res.arrayBuffer();
-                    const json = await this.decompress(compressed);
-                    const delta = JSON.parse(json);
-                    if(delta.version){
-                        this.portalVersion = delta.version;
-                    }else if(delta.timestamp){
-                        this.portalVersion = new Date(delta.timestamp).toLocaleString();
-                    }else{
-                        this.portalVersion = new Date().toLocaleString();
-                    }
-                }else{
-                    this.portalVersion = 'неизвестно';
-                }
-            }catch(e){
-                this.portalVersion = 'офлайн';
-            }
-            this.updateVersionDisplay();
-        }
-
-        updateVersionDisplay(){
-            const el = document.getElementById('portalVersion');
-            if(el) el.innerText = this.portalVersion ? `📅 ${this.portalVersion}` : '';
-        }
-
         async checkPublicUpdates(){
             try{
                 const res = await fetch(this.deltaUrl);
@@ -175,9 +89,6 @@
                             this.showStatus(`+${netNew}`);
                         }
                     }
-                    if(delta.version) this.portalVersion = delta.version;
-                    else if(delta.timestamp) this.portalVersion = new Date(delta.timestamp).toLocaleString();
-                    this.updateVersionDisplay();
                 }
             }catch(e){}
         }
@@ -225,162 +136,13 @@
 
             document.getElementById('viewTitle').innerHTML = this.escape(art.title);
             document.getElementById('viewContent').innerHTML = (art.content || '').replace(/\n/g, '<br>');
-
-            const shareBtn = document.getElementById('viewShareBtn');
-            if(shareBtn) shareBtn.classList.remove('hidden');
         }
 
         backToList(){
             this.currentViewArticleId = null;
             document.getElementById('publicList').style.display = 'block';
             document.getElementById('articleView').style.display = 'none';
-            const shareBtn = document.getElementById('viewShareBtn');
-            if(shareBtn) shareBtn.classList.add('hidden');
             this.render();
-        }
-
-        // Генерация QR-кода (без внешних библиотек)
-        generateQRCode(dataStr){
-            const canvas = document.getElementById('qrCanvas');
-            if(!canvas) return;
-            
-            // Простая визуализация QR (для передачи данных)
-            canvas.width = 200;
-            canvas.height = 200;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0,0,200,200);
-            ctx.fillStyle = '#000';
-            ctx.font = '10px monospace';
-            ctx.fillText('QR данные:', 10, 20);
-            
-            // Обрезаем длинные строки
-            const displayStr = dataStr.length > 120 ? dataStr.substring(0, 117) + '...' : dataStr;
-            ctx.fillText(displayStr, 10, 40);
-            
-            // Добавляем инструкцию
-            ctx.font = '8px monospace';
-            ctx.fillText('Отсканируйте код', 10, 180);
-        }
-
-        // WebRTC синхронизация (офлайн-обмен порталом)
-        async startSharing(){
-            if(this.isSharing) return;
-            this.isSharing = true;
-            this.showStatus('🔄 Подготовка QR...');
-
-            this.peerConnection = new RTCPeerConnection();
-            this.dataChannel = this.peerConnection.createDataChannel('portal');
-            this.dataChannel.onopen = () => {
-                this.showStatus('📡 Соединение установлено, передача портала...');
-                const portalData = localStorage.getItem('pocketnet_public') || '[]';
-                this.dataChannel.send(portalData);
-                setTimeout(() => {
-                    if(this.dataChannel) this.dataChannel.close();
-                    if(this.peerConnection) this.peerConnection.close();
-                    this.isSharing = false;
-                    this.showStatus('✅ Поделились!');
-                }, 1000);
-            };
-
-            this.peerConnection.onicecandidate = (event) => {
-                if(event.candidate){
-                    const qrData = JSON.stringify({
-                        type: 'offer',
-                        sdp: this.peerConnection.localDescription,
-                        candidate: event.candidate
-                    });
-                    this.generateQRCode(qrData);
-                }
-            };
-
-            const offer = await this.peerConnection.createOffer();
-            await this.peerConnection.setLocalDescription(offer);
-        }
-
-        async startReceiving(){
-            this.showStatus('📷 Сканируйте QR...');
-            
-            // Показываем контейнер для видео
-            const qrReaderDiv = document.getElementById('qrReader');
-            if(qrReaderDiv) qrReaderDiv.style.display = 'block';
-            
-            try {
-                // Запрашиваем доступ к камере
-                this.videoStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" } 
-                });
-                
-                const video = document.createElement('video');
-                video.srcObject = this.videoStream;
-                video.setAttribute("playsinline", "");
-                video.style.width = '100%';
-                video.style.maxWidth = '300px';
-                
-                if(qrReaderDiv) {
-                    qrReaderDiv.innerHTML = '';
-                    qrReaderDiv.appendChild(video);
-                }
-                
-                await video.play();
-                
-                // Используем qr-scanner для распознавания
-                if(window.QrScanner) {
-                    this.qrScanner = new window.QrScanner(video, async (result) => {
-                        if(result && this.qrScanner) {
-                            this.qrScanner.stop();
-                            this.stopVideoStream();
-                            
-                            try {
-                                const signal = JSON.parse(result);
-                                if(signal.type === 'offer'){
-                                    this.peerConnection = new RTCPeerConnection();
-                                    this.peerConnection.ondatachannel = (event) => {
-                                        const channel = event.channel;
-                                        channel.onmessage = (msg) => {
-                                            const receivedData = msg.data;
-                                            localStorage.setItem('pocketnet_public', receivedData);
-                                            this.loadPublicPortal();
-                                            this.showStatus('✅ Портал получен!');
-                                            if(qrReaderDiv) qrReaderDiv.style.display = 'none';
-                                        };
-                                    };
-                                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-                                    const answer = await this.peerConnection.createAnswer();
-                                    await this.peerConnection.setLocalDescription(answer);
-                                    const answerQR = JSON.stringify({ type: 'answer', sdp: this.peerConnection.localDescription });
-                                    this.generateQRCode(answerQR);
-                                    this.showStatus('Покажите этот QR другу');
-                                } else if(signal.type === 'answer' && this.peerConnection) {
-                                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-                                }
-                            } catch(e){
-                                this.showStatus('Ошибка: ' + e.message);
-                                if(qrReaderDiv) qrReaderDiv.style.display = 'none';
-                            }
-                        }
-                    });
-                    
-                    this.qrScanner.start();
-                } else {
-                    this.showStatus('Ошибка: библиотека QrScanner не загружена');
-                    if(qrReaderDiv) qrReaderDiv.style.display = 'none';
-                }
-            } catch(e) {
-                this.showStatus('Ошибка камеры: ' + e.message);
-                if(qrReaderDiv) qrReaderDiv.style.display = 'none';
-            }
-        }
-        
-        stopVideoStream(){
-            if(this.videoStream){
-                this.videoStream.getTracks().forEach(track => track.stop());
-                this.videoStream = null;
-            }
-            if(this.qrScanner){
-                this.qrScanner.destroy();
-                this.qrScanner = null;
-            }
         }
 
         showStatus(msg){
@@ -406,21 +168,9 @@
             }
 
             document.getElementById('viewBackBtn').onclick = () => this.backToList();
-            
-            const viewShareBtn = document.getElementById('viewShareBtn');
-            if(viewShareBtn) viewShareBtn.onclick = () => this.startSharing();
-            
-            const sharePortalBtn = document.getElementById('sharePortalBtn');
-            if(sharePortalBtn) sharePortalBtn.onclick = () => this.startSharing();
-            
-            const receivePortalBtn = document.getElementById('receivePortalBtn');
-            if(receivePortalBtn) receivePortalBtn.onclick = () => this.startReceiving();
         }
 
         async init(){
-            if (typeof QrScanner !== 'undefined') {
-                QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
-            }
             if ('serviceWorker' in navigator) {
                 try {
                     const scope = new URL('./', document.baseURI).href;
