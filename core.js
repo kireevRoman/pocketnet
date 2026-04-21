@@ -1,4 +1,4 @@
-// PocketNet Core — gzip как в v2.0 (writable + readable); WebRTC + qr-scanner UMD
+// PocketNet Core — gzip только если 1f 8b; иначе UTF-8 (уже распакованный ответ)
 (function(){
     class PocketNet {
         constructor(){
@@ -30,22 +30,71 @@
             return Array.from(byId.values()).sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
         }
 
-        async decompress(buffer){
-            try{
+        utf8Decode(buf){
+            return new TextDecoder().decode(new Uint8Array(buf));
+        }
+
+        /** Уже готовый JSON (fetch снял Content-Encoding, или .bin без gzip). */
+        bufferLooksLikeJson(u8){
+            let i = 0;
+            if (u8.length >= 3 && u8[0] === 0xef && u8[1] === 0xbb && u8[2] === 0xbf) i = 3;
+            while (i < u8.length){
+                const c = u8[i];
+                if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d){ i++; continue; }
+                return c === 0x5b || c === 0x7b;
+            }
+            return false;
+        }
+
+        isGzipMagic(u8){
+            return u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b;
+        }
+
+        async gunzipToBuffer(u8){
+            if (typeof DecompressionStream === 'undefined') return null;
+            try {
                 const stream = new DecompressionStream('gzip');
                 const writer = stream.writable.getWriter();
-                await writer.write(new Uint8Array(buffer));
+                await writer.write(u8);
                 await writer.close();
-                const decompressed = await new Response(stream.readable).arrayBuffer();
-                return new TextDecoder().decode(decompressed);
-            }catch(e){
-                return this.fallbackDecompress(buffer);
+                const ab = await new Response(stream.readable).arrayBuffer().catch(() => null);
+                return ab ? new Uint8Array(ab) : null;
+            } catch (e) {
+                return null;
             }
+        }
+
+        async decompress(buffer){
+            let u8 = new Uint8Array(buffer);
+            if (u8.length === 0) return '[]';
+
+            if (this.bufferLooksLikeJson(u8)) {
+                return this.utf8Decode(u8);
+            }
+
+            if (!this.isGzipMagic(u8)) {
+                return this.utf8Decode(u8);
+            }
+
+            let layers = 0;
+            while (layers < 3 && this.isGzipMagic(u8)){
+                const next = await this.gunzipToBuffer(u8);
+                if (!next) {
+                    return this.fallbackDecompress(u8.buffer);
+                }
+                u8 = next;
+                layers++;
+                if (this.bufferLooksLikeJson(u8)) {
+                    return this.utf8Decode(u8);
+                }
+            }
+
+            return this.utf8Decode(u8);
         }
 
         fallbackDecompress(buffer){
             try{
-                return new TextDecoder().decode(new Uint8Array(buffer));
+                return this.utf8Decode(buffer);
             }catch(e){ return '[]'; }
         }
 
