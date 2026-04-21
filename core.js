@@ -61,25 +61,16 @@
         }
 
         async decompress(buffer){
-            const u8 = new Uint8Array(buffer);
-            if(u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b){
-                try{ return await this._decompressWithFormat(buffer, 'gzip'); }catch(e){ /* fallthrough */ }
+            try{
+                const stream = new DecompressionStream('gzip');
+                const writer = stream.writable.getWriter();
+                writer.write(new Uint8Array(buffer));
+                writer.close();
+                const decompressed = await new Response(stream.readable).arrayBuffer();
+                return new TextDecoder().decode(decompressed);
+            }catch(e){
+                return this.fallbackDecompress(buffer);
             }
-            if(u8.length >= 4 && u8[0] === 0x28 && u8[1] === 0xb5 && u8[2] === 0x2f && u8[3] === 0xfd){
-                if(this._supportsDecompressionFormat('zstd')){
-                    try{ return await this._decompressWithFormat(buffer, 'zstd'); }catch(e){ /* fallthrough */ }
-                }
-            }
-            if(u8.length >= 2 && u8[0] === 0x78 && (u8[1] === 0x01 || u8[1] === 0x9c || u8[1] === 0xda)){
-                try{ return await this._decompressWithFormat(buffer, 'deflate'); }catch(e){ /* fallthrough */ }
-            }
-            if(this._supportsDecompressionFormat('deflate')){
-                try{ return await this._decompressWithFormat(buffer, 'deflate'); }catch(e){ /* fallthrough */ }
-            }
-            if(this._supportsDecompressionFormat('gzip')){
-                try{ return await this._decompressWithFormat(buffer, 'gzip'); }catch(e){ /* fallthrough */ }
-            }
-            return this.fallbackDecompress(buffer);
         }
 
         fallbackDecompress(buffer){
