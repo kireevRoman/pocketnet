@@ -16,9 +16,9 @@ body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .header{background:#fff;padding:1rem;border-radius:16px;margin-bottom:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 h1{font-size:1.3rem;display:flex;align-items:center;gap:0.5rem}
 .search-box{width:100%;margin:0.75rem 0 0.5rem;padding:0.7rem;border:1px solid #ddd;border-radius:12px;font-size:1rem;background:#fff}
-.status{font-size:0.7rem;color:#666;display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;flex-wrap:wrap;gap:0.5rem}
+.status{font-size:0.7rem;color:#666;display:flex;justify-content:space-between;align-items:flex-start;margin-top:0.25rem;flex-wrap:wrap;gap:0.5rem}
 .sync-label{font-size:0.65rem;color:#888}
-.actions{display:flex;gap:0.5rem}
+.actions{display:flex;gap:0.5rem;position:relative;z-index:2;flex-shrink:0}
 .btn{font:inherit;padding:0.4rem 0.8rem;border:1px solid #1a73e8;background:#fff;color:#1a73e8;cursor:pointer;border-radius:10px;font-size:0.8rem;transition:all 0.1s}
 .btn:active{transform:scale(0.96)}
 .btn-primary{background:#1a73e8;color:#fff}
@@ -34,6 +34,7 @@ h1{font-size:1.3rem;display:flex;align-items:center;gap:0.5rem}
 .back-btn{margin-bottom:0.75rem}
 .empty{padding:2rem;text-align:center;color:#888}
 dialog{border:none;border-radius:20px;padding:0;max-width:min(520px,100vw-32px);background:#fff;box-shadow:0 10px 40px rgba(0,0,0,0.15)}
+dialog[open]{display:block}
 dialog::backdrop{background:rgba(0,0,0,0.4)}
 .share-panel{padding:1.2rem}
 .share-panel h2{font-size:1.2rem;margin-bottom:0.5rem}

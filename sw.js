@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pocketnet-v8';
+const CACHE_NAME = 'pocketnet-v9';
 const base = () => new URL('./', self.location).href;
 const u = (p) => new URL(p, base()).href;
 const urlsToCache = [

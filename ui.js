@@ -127,15 +127,47 @@ const UI = {
         return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);
     },
     
-    showDialog() {
-        if (this.elements.syncDialog && typeof this.elements.syncDialog.showModal === 'function') {
-            this.elements.syncDialog.showModal();
-        }
+    getSyncDialog() {
+        const d = this.elements.syncDialog || document.getElementById('syncDialog');
+        if (d) this.elements.syncDialog = d;
+        return d;
     },
-    
+
+    showDialog() {
+        const d = this.getSyncDialog();
+        if (!d) return;
+        if (d.open) return;
+        try {
+            if (typeof d.showModal === 'function') {
+                d.showModal();
+                return;
+            }
+        } catch (e) {
+            console.warn('PocketNet: showModal failed', e);
+        }
+        try {
+            if (typeof d.show === 'function') {
+                d.show();
+                return;
+            }
+        } catch (e) {
+            console.warn('PocketNet: show failed', e);
+        }
+        d.setAttribute('open', '');
+    },
+
     hideDialog() {
-        if (this.elements.syncDialog && typeof this.elements.syncDialog.close === 'function') {
-            this.elements.syncDialog.close();
+        const d = this.getSyncDialog();
+        if (d) {
+            try {
+                if (typeof d.close === 'function') {
+                    d.close();
+                } else {
+                    d.removeAttribute('open');
+                }
+            } catch (e) {
+                d.removeAttribute('open');
+            }
         }
         this.hideProgress();
         this.showBleStatus('⚡ Готов к синхронизации', 'waiting');
