@@ -1,4 +1,4 @@
-// PocketNet Core v4.0 — deflate, версия портала, WebRTC синхронизация через qr-scanner (25 КБ)
+// PocketNet Core v4.0 — gzip portal.bin / delta.bin, WebRTC + qr-scanner UMD
 (function(){
     class PocketNet {
         constructor(){
@@ -30,10 +30,10 @@
             return Array.from(byId.values()).sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
         }
 
-        // Сжатие/распаковка через deflate (эффективнее gzip)
+        // portal.bin / delta.bin — gzip (магические байты 1f 8b)
         async decompress(buffer){
             try{
-                const stream = new DecompressionStream('deflate');
+                const stream = new DecompressionStream('gzip');
                 const writer = stream.writable.getWriter();
                 writer.write(new Uint8Array(buffer));
                 writer.close();
@@ -370,6 +370,9 @@
         }
 
         async init(){
+            if (typeof QrScanner !== 'undefined') {
+                QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+            }
             if ('serviceWorker' in navigator) {
                 try {
                     const scope = new URL('./', document.baseURI).href;
