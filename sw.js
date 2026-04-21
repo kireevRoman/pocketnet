@@ -1,10 +1,7 @@
-const CACHE_NAME = 'pocketnet-v4';
-const urlsToCache = [
-    '/',
-    '/index.html',
-    '/core.js',
-    '/manifest.json'
-];
+const CACHE_NAME = 'pocketnet-v5';
+const base = () => new URL('./', self.location).href;
+const u = (p) => new URL(p, base()).href;
+const urlsToCache = [u('index.html'), u('core.js'), u('manifest.json')];
 
 self.addEventListener('install', event => {
     event.waitUntil(
@@ -13,8 +10,8 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-    const url = event.request.url;
-    if (url.includes('/api/portal.bin') || url.includes('/api/delta.bin')) {
+    const path = new URL(event.request.url).pathname;
+    if (path.endsWith('/api/portal.bin') || path.endsWith('/api/delta.bin')) {
         event.respondWith(
             fetch(event.request).then((response) => {
                 if (response && response.ok && response.status === 200) {

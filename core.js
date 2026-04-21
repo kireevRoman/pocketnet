@@ -6,8 +6,9 @@
             this.searchQuery = '';
             this.currentViewArticleId = null;
 
-            this.apiUrl = '/api/portal.bin';
-            this.deltaUrl = '/api/delta.bin';
+            const base = new URL('./', document.baseURI);
+            this.apiUrl = new URL('api/portal.bin', base).href;
+            this.deltaUrl = new URL('api/delta.bin', base).href;
 
             this.init();
         }
