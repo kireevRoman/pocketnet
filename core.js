@@ -30,16 +30,17 @@
             return Array.from(byId.values()).sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
         }
 
-        // portal.bin / delta.bin — gzip (магические байты 1f 8b)
         async decompress(buffer){
             try{
-                const stream = new DecompressionStream('gzip');
+                // Меняем 'gzip' на 'deflate'
+                const stream = new DecompressionStream('deflate');
                 const writer = stream.writable.getWriter();
                 writer.write(new Uint8Array(buffer));
                 writer.close();
                 const decompressed = await new Response(stream.readable).arrayBuffer();
                 return new TextDecoder().decode(decompressed);
             }catch(e){
+                console.warn('Decompression failed:', e);
                 return this.fallbackDecompress(buffer);
             }
         }
