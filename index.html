@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PocketNet</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#06c">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#eee;color:#222;padding:max(8px,env(safe-area-inset-top)) 8px 8px}
+#app{max-width:1200px;margin:0 auto}
+.header,.list,.view{background:#fff}
+.header{padding:.75rem;border-bottom:1px solid #ccc}
+h1{font-size:1.2rem}
+.search-box{width:100%;margin:.5rem 0;padding:.45rem;border:1px solid #ccc;font:inherit}
+.status,.meta{font-size:.7rem;color:#666}
+.status{display:flex;justify-content:space-between;margin-top:.25rem}
+.card{padding:.65rem .75rem;border-bottom:1px solid #eee;cursor:pointer}
+.title{font-weight:600}
+.view{padding:.75rem;border-bottom:1px solid #ccc;display:none}
+#viewTitle{font-size:1.1rem;margin-bottom:.4rem}
+#viewContent{line-height:1.5}
+#viewContent a{color:#06c}
+.back-btn{font:inherit;padding:.35rem .65rem;border:1px solid #06c;background:#fff;color:#06c;cursor:pointer;margin-bottom:.5rem}
+.empty{padding:1.5rem 1rem;text-align:center;color:#666}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="header">
+<h1>PocketNet</h1>
+<input type="text" id="searchInput" class="search-box" placeholder="Поиск">
+<div class="status"><span id="statusText">…</span><span>v2</span></div>
+</div>
+<div id="publicList" class="list"></div>
+<div id="articleView" class="view">
+<button type="button" id="viewBackBtn" class="back-btn">Назад</button>
+<h2 id="viewTitle"></h2>
+<div id="viewContent"></div>
+</div>
+</div>
+<script src="core.js"></script>
+</body>
+</html>
