@@ -1,7 +1,12 @@
-const CACHE_NAME = 'pocketnet-v5';
+const CACHE_NAME = 'pocketnet-v6';
 const base = () => new URL('./', self.location).href;
 const u = (p) => new URL(p, base()).href;
-const urlsToCache = [u('index.html'), u('core.js'), u('manifest.json')];
+const urlsToCache = [
+    u('index.html'),
+    u('core.js'),
+    u('manifest.json'),
+    u('lib/qrcode.min.js')
+];
 
 self.addEventListener('install', event => {
     event.waitUntil(
