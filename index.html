@@ -2,129 +2,136 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PocketNet</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#06c">
+<meta name="theme-color" content="#1a73e8">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,sans-serif;background:#eee;color:#222;padding:max(8px,env(safe-area-inset-top)) 8px 8px}
-#app{max-width:1200px;margin:0 auto}
-.header,.list,.view{background:#fff}
-.header{padding:.75rem;border-bottom:1px solid #ccc}
-h1{font-size:1.2rem}
-.search-box{width:100%;margin:.5rem 0;padding:.45rem;border:1px solid #ccc;font:inherit}
-.status,.meta{font-size:.7rem;color:#666}
-.status{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-top:.25rem;flex-wrap:wrap}
-.status-left{display:flex;flex-direction:column;gap:.2rem;flex:1;min-width:0}
-.portal-sync{font-size:.65rem;color:#555;line-height:1.3}
-.actions{display:flex;gap:.35rem;align-items:center;flex-shrink:0}
-.btn{font:inherit;padding:.35rem .55rem;border:1px solid #06c;background:#fff;color:#06c;cursor:pointer;border-radius:2px}
-.btn:focus{outline:2px solid #06c;outline-offset:1px}
-.card{padding:.65rem .75rem;border-bottom:1px solid #eee;cursor:pointer}
-.title{font-weight:600}
-.view{padding:.75rem;border-bottom:1px solid #ccc;display:none}
-#viewTitle{font-size:1.1rem;margin-bottom:.4rem}
-#viewContent{line-height:1.5}
-#viewContent a{color:#06c}
-.back-btn{font:inherit;padding:.35rem .65rem;border:1px solid #06c;background:#fff;color:#06c;cursor:pointer;margin-bottom:.5rem}
-.empty{padding:1.5rem 1rem;text-align:center;color:#666}
-dialog{border:1px solid #ccc;border-radius:4px;padding:0;max-width:min(520px,100vw - 16px);background:#fff}
-dialog::backdrop{background:rgba(0,0,0,.35)}
-.share-panel{padding:.85rem}
-.share-panel h2{font-size:1rem;margin-bottom:.5rem}
-.share-panel p,.share-panel .hint{font-size:.8rem;color:#444;margin:.35rem 0;line-height:1.4}
-.share-section{margin-top:.75rem;padding-top:.65rem;border-top:1px solid #eee}
-.share-section h3{font-size:.9rem;margin-bottom:.35rem}
-.qr-row{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-start;margin:.5rem 0}
-#shareUrlQr,#hostSignalQr,#guestSignalQr{min-width:168px;min-height:168px;background:#fff}
-.qr-fallback{font-size:.75rem;color:#666;max-width:220px}
-textarea.sig-field{width:100%;min-height:72px;font-family:ui-monospace,monospace;font-size:.65rem;padding:.35rem;border:1px solid #ccc;resize:vertical}
-.row-btns{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.35rem}
-.ver{font-size:.65rem;color:#999}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#222;padding:max(8px,env(safe-area-inset-top)) 8px 8px}
+#app{max-width:600px;margin:0 auto}
+.header{background:#fff;padding:1rem;border-radius:16px;margin-bottom:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+h1{font-size:1.3rem;display:flex;align-items:center;gap:0.5rem}
+.search-box{width:100%;margin:0.75rem 0 0.5rem;padding:0.7rem;border:1px solid #ddd;border-radius:12px;font-size:1rem;background:#fff}
+.status{font-size:0.7rem;color:#666;display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;flex-wrap:wrap;gap:0.5rem}
+.sync-label{font-size:0.65rem;color:#888}
+.actions{display:flex;gap:0.5rem}
+.btn{font:inherit;padding:0.4rem 0.8rem;border:1px solid #1a73e8;background:#fff;color:#1a73e8;cursor:pointer;border-radius:10px;font-size:0.8rem;transition:all 0.1s}
+.btn:active{transform:scale(0.96)}
+.btn-primary{background:#1a73e8;color:#fff}
+.btn-danger{background:#dc3545;border-color:#dc3545;color:#fff}
+.list{background:#fff;border-radius:16px;overflow:hidden}
+.card{padding:0.9rem 1rem;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.1s}
+.card:active{background:#f5f5f5}
+.title{font-weight:600;margin-bottom:0.25rem}
+.meta{font-size:0.7rem;color:#888;display:flex;gap:0.5rem;flex-wrap:wrap}
+.view{background:#fff;border-radius:16px;padding:1.2rem;display:none}
+#viewTitle{font-size:1.2rem;margin-bottom:0.5rem}
+#viewContent{line-height:1.5;font-size:0.95rem}
+.back-btn{margin-bottom:0.75rem}
+.empty{padding:2rem;text-align:center;color:#888}
+dialog{border:none;border-radius:20px;padding:0;max-width:min(520px,100vw-32px);background:#fff;box-shadow:0 10px 40px rgba(0,0,0,0.15)}
+dialog::backdrop{background:rgba(0,0,0,0.4)}
+.share-panel{padding:1.2rem}
+.share-panel h2{font-size:1.2rem;margin-bottom:0.5rem}
+.share-panel p{font-size:0.8rem;color:#666;margin:0.5rem 0}
+.ble-status{background:#f0f7ff;border-radius:12px;padding:0.8rem;margin:0.75rem 0;text-align:center}
+.ble-status.waiting{background:#fff3e0}
+.ble-status.success{background:#e8f5e9}
+.ble-status.error{background:#ffebee}
+.sync-progress{margin:0.75rem 0;text-align:center}
+.sync-progress progress{width:100%;height:8px;border-radius:4px}
+.sync-progress span{font-size:0.7rem;color:#666}
+.row-btns{display:flex;gap:0.5rem;flex-wrap:wrap;margin:0.75rem 0}
+.sig-field{width:100%;min-height:80px;font-family:monospace;font-size:0.7rem;padding:0.5rem;border:1px solid #ddd;border-radius:10px;resize:vertical;background:#f9f9f9}
+.hidden{display:none}
+@media (prefers-color-scheme:dark){
+    body{background:#121212}
+    .header,.list,.view,dialog{background:#1e1e1e;color:#fff}
+    .search-box{background:#2a2a2a;border-color:#444;color:#fff}
+    .card{border-bottom-color:#333}
+    .meta,.status,.share-panel p{color:#aaa}
+    .sig-field{background:#2a2a2a;border-color:#444;color:#fff}
+    .btn{background:#2a2a2a}
+}
 </style>
 </head>
 <body>
 <div id="app">
 <div class="header">
-<h1>PocketNet</h1>
-<input type="text" id="searchInput" class="search-box" placeholder="Поиск" autocomplete="off" aria-label="Поиск по статьям">
+<h1>📘 PocketNet</h1>
+<input type="text" id="searchInput" class="search-box" placeholder="Поиск по статьям" autocomplete="off">
 <div class="status">
-<div class="status-left">
-<span id="statusText">…</span>
-<span id="portalSyncLabel" class="portal-sync" role="status">Портал: …</span>
-</div>
+<span id="statusText">Загрузка...</span>
 <div class="actions">
-<button type="button" id="sharePortalBtn" class="btn" aria-haspopup="dialog" aria-controls="shareDialog">Поделиться порталом</button>
-<span class="ver" aria-hidden="true">v2.1</span>
+<button type="button" id="syncBtn" class="btn">🔄 Синхр.</button>
+<button type="button" id="shareBtn" class="btn btn-primary">📤 Поделиться</button>
 </div>
 </div>
+<div class="sync-label" id="syncLabel">Портал: —</div>
 </div>
 <div id="publicList" class="list"></div>
 <div id="articleView" class="view">
-<button type="button" id="viewBackBtn" class="back-btn">Назад</button>
+<button id="backBtn" class="btn back-btn">← Назад</button>
 <h2 id="viewTitle"></h2>
 <div id="viewContent"></div>
 </div>
 </div>
 
-<dialog id="shareDialog" aria-labelledby="shareDialogTitle">
+<dialog id="syncDialog">
 <div class="share-panel">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
-<h2 id="shareDialogTitle">Поделиться порталом</h2>
-<button type="button" id="shareDialogClose" class="btn" aria-label="Закрыть">Закрыть</button>
+<div style="display:flex;justify-content:space-between;align-items:center">
+<h2>🔄 Синхронизация портала</h2>
+<button id="closeSyncDialog" class="btn" style="padding:0.2rem 0.5rem">✕</button>
 </div>
-<p>QR со ссылкой на приложение — чтобы открыть тот же портал на другом устройстве. Синхронизация статей между двумя устройствами без сервера — через WebRTC (удобнее в одной Wi‑Fi сети; при необходимости обменивайтесь текстом приглашения вручную).</p>
-<div class="qr-row">
-<div id="shareUrlQr" aria-label="QR-код со ссылкой на приложение"></div>
+<p>Выберите режим синхронизации через Bluetooth. Убедитесь, что Bluetooth включён на обоих устройствах.</p>
+
+<div id="bleStatus" class="ble-status waiting">
+<span id="bleStatusText">⚡ Готов к синхронизации</span>
 </div>
 
-<div class="share-section">
-<h3>Синхронизация статей (WebRTC)</h3>
-<p class="hint"><strong>Отправитель:</strong> создайте приглашение и передайте его второму устройству (QR или копирование). <strong>Получатель:</strong> вставьте приглашение, создайте ответ и верните его отправителю.</p>
-<div class="row-btns">
-<button type="button" id="webrtcHostStart" class="btn">Я отправляю данные</button>
-</div>
-<div id="webrtcHostStep" hidden>
-<p class="hint">Передайте блок ниже получателю. После того как получатель пришлёт ответ — вставьте его в поле и нажмите «Применить ответ».</p>
-<div class="qr-row"><div id="hostSignalQr" aria-label="QR приглашения WebRTC"></div></div>
-<label class="hint" for="hostSignalOut">Текст приглашения</label>
-<textarea id="hostSignalOut" class="sig-field" readonly rows="4" aria-readonly="true"></textarea>
-<div class="row-btns">
-<button type="button" id="copyHostSignal" class="btn">Копировать приглашение</button>
-</div>
-<label class="hint" for="hostAnswerIn">Ответ получателя</label>
-<textarea id="hostAnswerIn" class="sig-field" rows="3" placeholder="Вставьте ответ с другого устройства" aria-label="Ответ получателя WebRTC"></textarea>
-<div class="row-btns">
-<button type="button" id="webrtcHostApply" class="btn">Применить ответ</button>
-</div>
-</div>
+<div id="syncProgress" class="sync-progress hidden">
+<progress id="syncProgressBar" value="0" max="100"></progress>
+<span id="syncProgressText">Передача...</span>
 </div>
 
-<div class="share-section">
-<h3>Получатель</h3>
-<label class="hint" for="guestSignalIn">Вставьте приглашение от отправителя</label>
-<textarea id="guestSignalIn" class="sig-field" rows="3" placeholder="Вставьте текст приглашения" aria-label="Приглашение WebRTC от отправителя"></textarea>
-<div class="row-btns">
-<button type="button" id="webrtcGuestCreate" class="btn">Создать ответ</button>
+<div id="senderPanel">
+<h3>📤 Отправить портал</h3>
+<p>Нажмите "Отправить", чтобы передать ваш портал на другое устройство.</p>
+<button id="startSendBtn" class="btn btn-primary">📤 Отправить портал</button>
 </div>
-<div id="webrtcGuestStep" hidden>
-<p class="hint">Отправьте этот ответ обратно отправителю (QR или копирование).</p>
-<div class="qr-row"><div id="guestSignalQr" aria-label="QR ответа WebRTC"></div></div>
-<label class="hint" for="guestSignalOut">Текст ответа</label>
-<textarea id="guestSignalOut" class="sig-field" readonly rows="4" aria-readonly="true"></textarea>
-<div class="row-btns">
-<button type="button" id="copyGuestSignal" class="btn">Копировать ответ</button>
+
+<div id="receiverPanel" style="margin-top:1rem; padding-top:1rem; border-top:1px solid #eee">
+<h3>📥 Получить портал</h3>
+<p>Нажмите "Получить", чтобы принять портал с другого устройства.</p>
+<button id="startReceiveBtn" class="btn">📥 Получить портал</button>
 </div>
+
+<div id="manualPanel" style="margin-top:1rem; padding-top:1rem; border-top:1px solid #eee">
+<h3>📄 Ручной обмен</h3>
+<p class="hint">Если Bluetooth не работает, используйте текстовый обмен.</p>
+<div class="row-btns">
+<button id="exportBtn" class="btn">📤 Экспортировать текст</button>
+<button id="importBtn" class="btn">📥 Импортировать текст</button>
+</div>
+<div id="exportArea" class="hidden" style="margin-top:0.5rem">
+<textarea id="exportText" class="sig-field" readonly rows="4"></textarea>
+<button id="copyExportBtn" class="btn">📋 Копировать</button>
+</div>
+<div id="importArea" class="hidden" style="margin-top:0.5rem">
+<textarea id="importText" class="sig-field" rows="4" placeholder="Вставьте текст портала..."></textarea>
+<button id="applyImportBtn" class="btn btn-primary">✅ Применить</button>
 </div>
 </div>
 </div>
 </dialog>
 
 <script src="lib/qrcode.min.js"></script>
+<script src="bluetooth.js"></script>
+<script src="ui.js"></script>
 <script src="core.js"></script>
 </body>
 </html>
