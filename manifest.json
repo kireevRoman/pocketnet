@@ -1,5 +1,7 @@
 {
   "name": "PocketNet",
+  "id": "/pocketnet/",
+  "lang": "ru",
   "short_name": "PocketNet",
   "start_url": "./",
   "display": "standalone",
