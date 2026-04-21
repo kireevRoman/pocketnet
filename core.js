@@ -171,12 +171,6 @@
         }
 
         async init(){
-            if ('serviceWorker' in navigator) {
-                try {
-                    const scope = new URL('./', document.baseURI).href;
-                    await navigator.serviceWorker.register(new URL('sw.js', document.baseURI).href, { scope });
-                } catch (e) {}
-            }
             await this.loadPublicPortal();
             this.bindEvents();
             await this.checkPublicUpdates();
